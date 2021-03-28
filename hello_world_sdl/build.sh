@@ -1,0 +1,3 @@
+emcc hello_world_sdl.cpp -o hello_world_sdl.html
+# we compile a standalone app but no window...
+gcc hello_world_sdl.cpp -I /usr/include/SDL -lSDL -o hello_world_sdl
