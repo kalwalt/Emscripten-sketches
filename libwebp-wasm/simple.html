@@ -1,0 +1,12 @@
+<!--From this article: https://developers.google.com/web/updates/2018/03/emscripting-a-c-library#the_holy_grail_compiling_a_c_library-->
+<body>
+  <script src="/a.out.js"></script>
+  <script>
+    Module.onRuntimeInitialized = async _ => {
+      const api = {
+        version: Module.cwrap('version', 'number', []),
+      };
+      console.log(api.version());
+    };
+  </script>
+</body>
