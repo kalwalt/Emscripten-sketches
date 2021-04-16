@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+ <head>
+ <meta charset="utf-8"/>
+ </head>
+    <body>
+        <div>HTML page I created for my WebAssembly module.</div>
+        <script>
+        const importObject = {
+        env: {
+          memoryBase: 0,
+          tableBase: 0,
+          memory: new WebAssembly.Memory({ initial: 256 }),
+          table: new WebAssembly.Table({ initial: 2, element: 'anyfunc' }),
+          abort: console.log
+             }
+        };
+        WebAssembly.instantiateStreaming(fetch("x2.wasm"),importObject).then(result => {
+
+        console.log(result);
+        const value = result.instance.exports._inc(17);
+        console.log(value.toString());
+        });
+        </script>
+    </body>
+</html>
