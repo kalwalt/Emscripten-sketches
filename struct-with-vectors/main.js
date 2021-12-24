@@ -5,6 +5,7 @@ function init() {
   let p = points.size();
   console.log(p);
   points.resize(1,[0,2])
-  console.log(points.size())
-  points = Module.getPointAtIndex(0);
+  //console.log(points.size())
+  var p2 = Module.getPointAtIndex(0);
+  console.log(p2);
 }

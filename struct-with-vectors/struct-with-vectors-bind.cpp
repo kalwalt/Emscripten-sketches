@@ -45,10 +45,10 @@ extern "C" {
         std::cout << "}; \n";
     }
 
-    std::vector<Point2d> getPointAtIndex(int index) {
+  Point2d getPointAtIndex(int index) {
         emscripten_console_log("reading vector of points at index");
         PointsManager pm;
-        return pm.points[index].point;
+        return pm.points[index].point.at(index);
     }
 
 }
