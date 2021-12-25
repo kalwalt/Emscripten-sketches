@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
@@ -15,40 +16,49 @@ struct Points {
       int id;
 };
 
-struct PointsManager {
-    Points *points;
-};
+std::unordered_map<int, Points> PointsManager;
+static int gPointsID = 0;
 
 extern "C" {
-    //Points *points;
 
-    void addPoints(int x, int y) {
+    int init() {
+        int id = gPointsID++;
+		Points *pm =  &(PointsManager[id]);
+		pm->id = id;
+        return pm->id;
+    }
+
+    int addPoints(int id, int x, int y) {
+        if (PointsManager.find(id) == PointsManager.end()) { return -1; }
+		Points *pm = &(PointsManager[id]);
         emscripten_console_log("starting addPoints...");
-        PointsManager pm;
-        int id;
         Point2d point;
         point.x = x;
         point.y = y;      
-        id = 0;
-        pm.points->point.push_back(point);
-        pm.points->id = id;
+        pm->point.push_back(point);
+        pm->id = id;
         emscripten_console_log("Added points...");
+        return -1;
     };
 
-    void readVec() {
+    int readVec(int id) {
+        if (PointsManager.find(id) == PointsManager.end()) { return -1; }
+		Points *pm = &(PointsManager[id]);
         emscripten_console_log("reading vector of points...");
-        PointsManager pm;
         std::cout << "x = { ";
-        for (Point2d p : pm.points->point) {
+        for (Point2d p : pm->point) {
             std::cout << p.x << ", ";
+            std::cout << p.y;
         }
         std::cout << "}; \n";
+        return -1;
     }
 
-  Point2d getPointAtIndex(int index) {
+  Point2d getPointAtIndex(int id, int index) {
+        if (PointsManager.find(id) == PointsManager.end()) { return {x: 0, y:0}; }
+		Points *pm = &(PointsManager[id]);
         emscripten_console_log("reading vector of points at index");
-        PointsManager pm;
-        return pm.points[index].point.at(index);
+        return pm->point.at(index);
     }
 
 }
