@@ -1,0 +1,1 @@
+emcc --bind memory_views.cpp -o memory_views.js
