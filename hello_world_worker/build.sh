@@ -1,0 +1,1 @@
+emcc hello_world_worker.cpp -o worker.js --preload-file file.dat

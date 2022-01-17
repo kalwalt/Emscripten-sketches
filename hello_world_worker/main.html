@@ -1,0 +1,15 @@
+<html>
+      <body>
+        Worker Test
+        <script>
+          var worker = new Worker('worker.js');
+          worker.onmessage = function(event) {
+            console.log(event);
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:%s/report_result?' + event.data);
+            xhr.send();
+            setTimeout(function() { window.close() }, 1000);
+          };
+        </script>
+      </body>
+      </html>
