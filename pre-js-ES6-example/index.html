@@ -1,0 +1,16 @@
+<body>
+    <script src="simple_ES6.js"></script>
+    <script>
+        Module.onRuntimeInitialized = async function(){
+        var simple = new Module.Simple(); // this will print "This is a simple message!"
+        console.log(simple); // this will pint the class as an object "Simple{}"
+        simple.saySomething(); // this will print "something"
+        console.log(message);
+        var msg = new Message('hello');
+        console.log(msg);
+        console.log(msg.getMessage()); // this will print "hello"
+        msg.setMessage('HELLO WORLD!!'); // we set the msg to "HELLO WORLD!!"
+        console.log(msg);
+        }  
+    </script>  
+</body>
