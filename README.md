@@ -4,6 +4,7 @@ Some examples to compile C++ code to WASM or javascript thanks to Emscripten.
 ## List of examples
 Every example is located in a separate folder. For every example is provided a build script and precompiled binaries.
 
+- ARLOG
 - gl_textures
 - hello_world_class
 - Hello_world_sdl
