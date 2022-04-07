@@ -1,4 +1,6 @@
-#include <emscripten.h>
+#if defined __EMSCRIPTEN__
+  #include <emscripten.h>
+#endif
 #include <stdio.h>
 #include "log.h"
 

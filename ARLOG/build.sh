@@ -1,2 +1,2 @@
 emcc main.cpp log.c -o log.js
-#gcc main.cpp log.c -o log
+gcc main.cpp log.c -o log

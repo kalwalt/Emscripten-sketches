@@ -60,7 +60,7 @@
 #    include <sys/errno.h>
 #  endif
 #endif
-//#include <ARX/ARUtil/types.h>
+
 #define ARUTIL_EXTERN
 #define ARUTIL_CALLBACK
 
