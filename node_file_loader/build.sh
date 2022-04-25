@@ -1,0 +1,1 @@
+emcc inputFile.cpp -o inputFile.js -s WASM_ASYNC_COMPILATION=0 -s EXIT_RUNTIME=1  --bind -lnodefs.js
