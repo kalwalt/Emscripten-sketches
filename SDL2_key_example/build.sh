@@ -1,0 +1,3 @@
+emcc sdl2_key.c -o page.html --pre-js pre.js  -sEXPORTED_FUNCTIONS=_main,_one -sUSE_SDL=2
+# we compile a standalone app but no window...
+# gcc sdl2_key.c -I /usr/include/SDL -lSDL -o sdl2_key

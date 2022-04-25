@@ -12,6 +12,9 @@ Every example is located in a separate folder. For every example is provided a b
 - libwebp-wasm
 - node_file_loader
 - pre-js-ES6-example
+- SDL2_key_example
+- SDL2_text_example
+- SDL2_ttf_example
 - struct-with-vectors
 - test_write
 - worker_api
