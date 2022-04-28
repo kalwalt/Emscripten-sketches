@@ -1,0 +1,3 @@
+emcc sdl2_text.c -o page.html --pre-js pre.js  -sEXPORTED_FUNCTIONS=_main,_one -sUSE_SDL=2
+# we compile a standalone app but no window...
+#gcc hello_world_sdl.cpp -I /usr/include/SDL -lSDL -o hello_world_sdl
