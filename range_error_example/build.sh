@@ -1,0 +1,1 @@
+emcc range_error_example.cpp --bind -fexceptions -o range_error_example.js
