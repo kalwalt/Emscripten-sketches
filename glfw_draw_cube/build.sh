@@ -1,0 +1,1 @@
+emcc glfw_draw.cpp -s USE_GLFW=3 -s USE_WEBGL2=1 -s LEGACY_GL_EMULATION=1 -sWASM=1 -std=c++1z -o glfw_example.html

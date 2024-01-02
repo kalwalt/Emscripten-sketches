@@ -1,0 +1,1 @@
+emcc  find_primes.cpp -s WASM=1 -sALLOW_MEMORY_GROWTH=1 -pthread -s PROXY_TO_PTHREAD -sEXIT_RUNTIME=1 -o find_primes.js

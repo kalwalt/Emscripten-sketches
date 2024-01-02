@@ -1,0 +1,1 @@
+emcc webgl_draw_triangle.c -s USE_WEBGL2=1 -sWASM=1 -o webgl_draw_triangle.html

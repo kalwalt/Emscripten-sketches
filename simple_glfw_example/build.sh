@@ -1,0 +1,1 @@
+emcc simple_glfw_example.cpp -s USE_GLFW=3 -s USE_WEBGL2=1 -sWASM=1 -std=c++1z -o simple_glfw_example.html
