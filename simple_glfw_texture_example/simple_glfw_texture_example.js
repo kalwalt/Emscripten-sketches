@@ -5054,6 +5054,8 @@ var ASM_CONSTS = {
 
   function _glClear(x0) { GLctx['clear'](x0) }
 
+  function _glClearColor(x0, x1, x2, x3) { GLctx['clearColor'](x0, x1, x2, x3) }
+
   function _glCompileShader(shader) {
       GLctx.compileShader(GL.shaders[shader]);
     }
@@ -6918,6 +6920,7 @@ var asmLibraryArg = {
   "glBindVertexArray": _glBindVertexArray,
   "glBufferData": _glBufferData,
   "glClear": _glClear,
+  "glClearColor": _glClearColor,
   "glCompileShader": _glCompileShader,
   "glCreateProgram": _glCreateProgram,
   "glCreateShader": _glCreateShader,
@@ -7028,7 +7031,7 @@ var dynCall_iiiiijj = Module["dynCall_iiiiijj"] = createExportWrapper("dynCall_i
 /** @type {function(...*):?} */
 var dynCall_iiiiiijj = Module["dynCall_iiiiiijj"] = createExportWrapper("dynCall_iiiiiijj");
 
-var ___emscripten_embedded_file_data = Module['___emscripten_embedded_file_data'] = 5310684;
+var ___emscripten_embedded_file_data = Module['___emscripten_embedded_file_data'] = 5310796;
 
 
 

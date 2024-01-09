@@ -1,4 +1,5 @@
 #include <functional>
+#include <filesystem>
 #include <vector>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -30,17 +31,21 @@ static const unsigned int indices[] = {
     };
 // set up vertex and fragment shader
 static const char *vertex_shader_text =
-    "attribute vec4 position;\n"
-    "attribute vec4 inputTextureCoordinate;\n"
+    "attribute vec3 position;\n"
+    "attribute vec3 color;\n"
+    "attribute vec2 inputTextureCoordinate;\n"
+    "varying vec3 outColor;\n"
     "varying vec2 textureCoordinate;\n"
     "void main()\n"
     "{\n"
-    "    gl_Position = position;\n"
+    "    gl_Position = vec4(position, 1.0);\n"
+    "    outColor = color;\n"
     "    textureCoordinate = inputTextureCoordinate.xy;\n"
     "}\n";
 
 static const char *fragment_shader_text =
     "varying highp vec2 textureCoordinate;\n"
+    "varying highp vec3 outColor;\n"
     "uniform sampler2D texture;\n"
     "void main()\n"
     "{\n"
@@ -79,7 +84,7 @@ void check_error(GLuint shader)
 
 int main(void)
 {
-    GLint frame_tex, vpos_location, vcol_location, input_Tex_location;
+    GLint frame_tex, vpos_location, vcol_location, input_tex_location;
     glfwSetErrorCallback(error_callback);
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -120,8 +125,13 @@ int main(void)
     glAttachShader(program, fragment_shader);
     glLinkProgram(program);
     frame_tex = glGetUniformLocation(program, "texture");
+    //printf("frame_tex = %d\n", frame_tex);
     vpos_location = glGetAttribLocation(program, "position");
-    input_Tex_location = glGetAttribLocation(program, "inputTextureCoordinate");
+    //printf("vpos_location = %d\n", vpos_location);
+    vcol_location = glGetAttribLocation(program, "color");
+    //printf("vcol_location = %d\n", vcol_location);
+    input_tex_location = glGetAttribLocation(program, "inputTextureCoordinate");
+    //printf("input_tex_location = %d\n", input_tex_location);
 
     unsigned int texture;
     glActiveTexture(GL_TEXTURE0);
@@ -136,9 +146,10 @@ int main(void)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-    //stbi_set_flip_vertically_on_load(true);  
-    unsigned char *data = stbi_load("chalk.jpg", &width, &height, &nrChannels, 0);
+    // we flip the image vertically
+    stbi_set_flip_vertically_on_load(true);
+    std::filesystem::path p = "chalk.jpg";
+    unsigned char *data = stbi_load(p.c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -182,6 +193,7 @@ int main(void)
         glfwGetFramebufferSize(window, &width, &height);
         ratio = width / (float)height;
         glViewport(0, 0, width, height);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         mat4x4_identity(m);
         mat4x4_rotate_Z(m, m, (float)glfwGetTime());
@@ -191,12 +203,10 @@ int main(void)
         glBindTexture(GL_TEXTURE_2D, texture);
         glUseProgram(program);
         //glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat *)mvp);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glfwSwapBuffers(window);
         glfwPollEvents();
     };
