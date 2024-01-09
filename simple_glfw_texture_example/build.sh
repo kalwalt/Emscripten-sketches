@@ -1,0 +1,1 @@
+emcc simple_glfw_texture_example.cpp -I./stb_image -s USE_GLFW=3 -s USE_WEBGL2=1 -sWASM=1 -std=c++1z --embed-file chalk.jpg -o simple_glfw_texture_example.html
