@@ -1,0 +1,1 @@
+emcc  -lembind -s USE_LIBJPEG=1 -sEXPORTED_RUNTIME_METHODS=FS -o main.js  load_jpeg.cpp
