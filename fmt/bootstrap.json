@@ -1,0 +1,9 @@
+[{
+  "name": "fmt",
+  "source": {
+    "type": "git",
+    "url": "https://github.com/fmtlib/fmt.git",
+    "revision": "e69e5f977d458f2650bb346dadf2ad30c5320281"
+  }
+}
+  ]
