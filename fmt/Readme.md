@@ -1,0 +1,1 @@
+docker exec fmt emcc -I./src/fmt/include -s EXIT_RUNTIME=1 -o fmt.js ./src/fmt_example.cpp 
