@@ -1,0 +1,1 @@
+unsigned char * convert_memory_simd_sse(unsigned char *img, int width, int height, int channels, int threads);
