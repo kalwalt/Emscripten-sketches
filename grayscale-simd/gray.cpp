@@ -74,7 +74,7 @@ static __attribute__((always_inline)) inline __m128i Rgb2Yx8(__m128i r7_r6_r5_r4
 
 unsigned char * convert_memory_simd_sse(unsigned char *img, int width, int height, int channels, int threads)
 {
-    unsigned char* result;
+    unsigned char* result = (unsigned char*)malloc(width * height*sizeof(unsigned char));
     // 256 bit registers, 32 bit floats => 8
     int floats_per_operation = 8;
 
