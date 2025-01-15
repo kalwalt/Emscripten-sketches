@@ -3,7 +3,6 @@
 //
 #include <immintrin.h>
 #include <stdio.h>
-#include <thread>
 #include <vector>
 
 // From https://stackoverflow.com/a/57844027
@@ -70,63 +69,29 @@ auto convert_memory_simd_sse(unsigned char *img, int width, int height, int chan
     auto result = (unsigned char*)malloc(width * height*sizeof(unsigned char));
     int floats_per_operation = 8;
     int size = width * height;
-    int pixel_per_thread_unaligned = size / threads;
-    int pixel_per_thread_aligned = ((int)pixel_per_thread_unaligned / floats_per_operation) * floats_per_operation;
 
-    auto worker = [&](int thread) {
-        int end;
-        if (thread + 1 == threads)
-        {
-            end = ((int)size / floats_per_operation) * floats_per_operation;
+    __m128i r7_r6_r5_r4_r3_r2_r1_r0;
+    __m128i g7_g6_g5_g4_g3_g2_g1_g0;
+    __m128i b7_b6_b5_b4_b3_b2_b1_b0;
+
+    for (int i = 0; i < size; i += floats_per_operation) {
+      __m128i r5_b4_g4_r4_b3_g3_r3_b2_g2_r2_b1_g1_r1_b0_g0_r0 =
+          _mm_loadu_si128((__m128i *)&img[i * channels]);
+      __m128i b7_g7_r7_b6_g6_r6_b5_g5 =
+          _mm_loadu_si128((__m128i *)&img[i * channels + 16]);
+
+      GatherRGBx8(r5_b4_g4_r4_b3_g3_r3_b2_g2_r2_b1_g1_r1_b0_g0_r0,
+                  b7_g7_r7_b6_g6_r6_b5_g5, &r7_r6_r5_r4_r3_r2_r1_r0,
+                  &g7_g6_g5_g4_g3_g2_g1_g0, &b7_b6_b5_b4_b3_b2_b1_b0);
+
+      __m128i y7_y6_y5_y4_y3_y2_y1_y0 =
+          Rgb2Yx8(r7_r6_r5_r4_r3_r2_r1_r0, g7_g6_g5_g4_g3_g2_g1_g0,
+                  b7_b6_b5_b4_b3_b2_b1_b0);
+
+      __m128i j7_j6_j5_j4_j3_j2_j1_j0 =
+          _mm_packus_epi16(y7_y6_y5_y4_y3_y2_y1_y0, y7_y6_y5_y4_y3_y2_y1_y0);
+
+      _mm_storel_epi64((__m128i *)&result[i], j7_j6_j5_j4_j3_j2_j1_j0);
         }
-        else
-        {
-            end = pixel_per_thread_aligned * (thread + 1);
-        }
-
-        __m128i r7_r6_r5_r4_r3_r2_r1_r0;
-        __m128i g7_g6_g5_g4_g3_g2_g1_g0;
-        __m128i b7_b6_b5_b4_b3_b2_b1_b0;
-
-        for (int i = pixel_per_thread_aligned * thread; i < end; i += floats_per_operation)
-        {
-            __m128i r5_b4_g4_r4_b3_g3_r3_b2_g2_r2_b1_g1_r1_b0_g0_r0 = _mm_loadu_si128((__m128i *)&img[i * channels]);
-            __m128i b7_g7_r7_b6_g6_r6_b5_g5 = _mm_loadu_si128((__m128i *)&img[i * channels + 16]);
-
-            GatherRGBx8(r5_b4_g4_r4_b3_g3_r3_b2_g2_r2_b1_g1_r1_b0_g0_r0,
-                        b7_g7_r7_b6_g6_r6_b5_g5,
-                        &r7_r6_r5_r4_r3_r2_r1_r0,
-                        &g7_g6_g5_g4_g3_g2_g1_g0,
-                        &b7_b6_b5_b4_b3_b2_b1_b0);
-
-            __m128i y7_y6_y5_y4_y3_y2_y1_y0 = Rgb2Yx8(r7_r6_r5_r4_r3_r2_r1_r0,
-                                                      g7_g6_g5_g4_g3_g2_g1_g0,
-                                                      b7_b6_b5_b4_b3_b2_b1_b0);
-
-            __m128i j7_j6_j5_j4_j3_j2_j1_j0 = _mm_packus_epi16(y7_y6_y5_y4_y3_y2_y1_y0, y7_y6_y5_y4_y3_y2_y1_y0);
-
-            _mm_storel_epi64((__m128i *)&result[i], j7_j6_j5_j4_j3_j2_j1_j0);
-        }
-    };
-
-    std::vector<std::thread> thread_pool;
-    for (int thread = 0; thread < threads; ++thread)
-    {
-        thread_pool.emplace_back(worker, thread);
-    }
-
-    for (auto &t : thread_pool)
-    {
-        t.join();
-    }
-
-    int start = ((int)size / floats_per_operation) * floats_per_operation;
-    for (int i = start; i < size; i++)
-    {
-        result[i] =
-            0.2126 * img[(i * channels)]        // red
-            + 0.7152 * img[(i * channels) + 1]  // green
-            + 0.0722 * img[(i * channels) + 2]; // blue
-    }
     return result;
 }
