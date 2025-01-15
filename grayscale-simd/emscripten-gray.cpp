@@ -1,4 +1,4 @@
-#include "gray.h"
+#include "memory_simd_sse_threads.cpp"
 #include <emscripten.h>
 #include <emscripten/val.h>
 #include <emscripten/bind.h>
