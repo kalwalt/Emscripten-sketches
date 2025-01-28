@@ -15,9 +15,9 @@ emscripten::val convert_to_gray(emscripten::val img, int width, int height, int 
     return view;
 }
 
-emscripten::val convert_to_luma(emscripten::val img, int width, int height, int channels)
+emscripten::val convert_to_luma(emscripten::val img, int width, int height, bool fastPath, bool simd128)
 {
-    auto vli = arVideoLumaInit(width, height);
+    auto vli = arVideoLumaInit(width, height, fastPath, simd128);
     auto u8_img = emscripten::convertJSArrayToNumberVector<uint8_t>(img);
     auto out = arVideoLuma(vli, u8_img.data());
     emscripten::val view{emscripten::typed_memory_view(width*height*1, out)};
