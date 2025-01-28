@@ -68,7 +68,7 @@ Module.onRuntimeInitialized = async function () {
     console.log(filtered)
     const width = 1637;
     const height = 2048;
-    const res = Module.convert_to_gray(filtered, 1637, 2048, 3, 4);
+    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, 3);
     const canvas = document.createElement('canvas');
     canvas.width = 1637;
     canvas.height = 2048;
