@@ -104,6 +104,12 @@ int arVideoLumaFinal(ARVideoLumaInfo **vli_p) {
   return (0);
 }
 
+v128_t hadd_epi32(v128_t a, v128_t b) {
+  v128_t shuffled_a = wasm_i32x4_shuffle(a, b, 2, 0, 2, 0);
+  v128_t shuffled_b = wasm_i32x4_shuffle(a, b, 3, 1, 3, 1);
+  return wasm_i32x4_add(shuffled_a, shuffled_b);
+}
+
 static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
@@ -134,8 +140,10 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     v128_t y4_7_h = wasm_i32x4_dot_i16x8(pixels4_7_h, RGBScale);
 
     // Horizontal add the result
-    v128_t y0_3 = wasm_i32x4_add(y0_3_l, y0_3_h);
-    v128_t y4_7 = wasm_i32x4_add(y4_7_l, y4_7_h);
+    v128_t y0_3 = hadd_epi32(y0_3_l, y0_3_h);
+    v128_t y4_7 = hadd_epi32(y4_7_l, y4_7_h);
+    //v128_t y0_3 = wasm_i32x4_add(y0_3_l, y0_3_h);
+    //v128_t y4_7 = wasm_i32x4_add(y4_7_l, y4_7_h);
 
     // Shift right by 8 bits to divide by 256
     y0_3 = wasm_u32x4_shr(y0_3, 8);
@@ -155,7 +163,6 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     dest += 8;
   }
 }
-
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
                                               uint8_t *__restrict src,
                                               int32_t numPixels) {
