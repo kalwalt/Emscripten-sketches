@@ -33,9 +33,6 @@ Module.onRuntimeInitialized = async function () {
             // Access pixel data
             const pixelData = imageData.data;
 
-            // Example: Access the red value of the first pixel
-            const firstPixelRed = pixelData[0];
-
             // Clean up
             URL.revokeObjectURL(objectURL);
 
@@ -48,27 +45,26 @@ Module.onRuntimeInitialized = async function () {
     }
 
     function rgbaToRgb(rgbaData) {
-        // Assumiamo che rgbaData sia un Uint8Array con struttura [R, G, B, A, R, G, B, A, ...]
+        // We assume that RGBA data is a Uint8Array with structure [R, G, B, A, R, G, B, A, ...]
 
-        const rgbData = new Uint8Array(rgbaData.length / 4 * 3); // Nuovo array per i dati RGB
+        const rgbData = new Uint8Array(rgbaData.length / 4 * 3); // New Uint8Array for RGBA data
         let rgbIndex = 0;
 
         for (let i = 0; i < rgbaData.length; i += 4) {
-            rgbData[rgbIndex++] = rgbaData[i];   // Copia R
-            rgbData[rgbIndex++] = rgbaData[i + 1]; // Copia G
-            rgbData[rgbIndex++] = rgbaData[i + 2]; // Copia B
+            rgbData[rgbIndex++] = rgbaData[i];   // Copy R
+            rgbData[rgbIndex++] = rgbaData[i + 1]; // Copy G
+            rgbData[rgbIndex++] = rgbaData[i + 2]; // Copy B
         }
 
         return rgbData;
     }
 
     const data = await readImageData('pinball.jpg')
-    console.log(data)
-    const filtered = rgbaToRgb(data.pixelData);
-    console.log(filtered)
+
     const width = 1637;
     const height = 2048;
     const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true);
+    
     const canvas = document.createElement('canvas');
     canvas.width = 1637;
     canvas.height = 2048;
@@ -77,25 +73,18 @@ Module.onRuntimeInitialized = async function () {
     const imageData = ctx.createImageData(1637, 2048);
 
     const alpha = 255;
-    //const alpha = (0xff << 24);
 
     const rgbaArray = new Uint8Array(width*height*4)
     const len = res.length;
-    console.log(len)
-    console.log('length rgbaArray', rgbaArray.length)
-    for (let i = 0, j = 0; i < len; ) {
-        rgbaArray[j++] = res[i++]; // Red
-        rgbaArray[j++] = res[i++]; // Green
-        rgbaArray[j++] = res[i++]; // Blu
-        rgbaArray[j++] = alpha;    // Alpha
+
+    for (let i = 0, j = 0; i < len; i++, j += 4) {
+        const v = res[i];
+        rgbaArray[j + 0] = v;
+        rgbaArray[j + 1] = v;
+        rgbaArray[j + 2] = v;
+        rgbaArray[j + 3] = alpha;
     }
-    /*var data_u32 = new Uint32Array(imageData.data.buffer);
-    //const alpha = (0xff << 24);
-    var i = width*height, pix = 0;
-    while(--i >= 0) {
-        pix = res.data[i];
-        data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
-    }*/
+
     imageData.data.set(rgbaArray);
     ctx.putImageData(imageData, 0, 0);
     console.log("Result from convert_to_gray function: ", imageData);
