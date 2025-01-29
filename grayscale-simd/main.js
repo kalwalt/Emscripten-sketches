@@ -68,7 +68,7 @@ Module.onRuntimeInitialized = async function () {
     console.log(filtered)
     const width = 1637;
     const height = 2048;
-    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, false);
+    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true);
     const canvas = document.createElement('canvas');
     canvas.width = 1637;
     canvas.height = 2048;
@@ -77,17 +77,25 @@ Module.onRuntimeInitialized = async function () {
     const imageData = ctx.createImageData(1637, 2048);
 
     const alpha = 255;
+    //const alpha = (0xff << 24);
 
     const rgbaArray = new Uint8Array(width*height*4)
     const len = res.length;
     console.log(len)
     console.log('length rgbaArray', rgbaArray.length)
     for (let i = 0, j = 0; i < len; ) {
-        rgbaArray[j++] = res[i++]; // Rosso
-        rgbaArray[j++] = res[i++]; // Verde
+        rgbaArray[j++] = res[i++]; // Red
+        rgbaArray[j++] = res[i++]; // Green
         rgbaArray[j++] = res[i++]; // Blu
-        rgbaArray[j++] = alpha;       // Alpha
+        rgbaArray[j++] = alpha;    // Alpha
     }
+    /*var data_u32 = new Uint32Array(imageData.data.buffer);
+    //const alpha = (0xff << 24);
+    var i = width*height, pix = 0;
+    while(--i >= 0) {
+        pix = res.data[i];
+        data_u32[i] = alpha | (pix << 16) | (pix << 8) | pix;
+    }*/
     imageData.data.set(rgbaArray);
     ctx.putImageData(imageData, 0, 0);
     console.log("Result from convert_to_gray function: ", imageData);

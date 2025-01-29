@@ -21,6 +21,7 @@ emscripten::val convert_to_luma(emscripten::val img, int width, int height, bool
     auto u8_img = emscripten::convertJSArrayToNumberVector<uint8_t>(img);
     auto out = arVideoLuma(vli, u8_img.data());
     emscripten::val view{emscripten::typed_memory_view(width*height*1, out)};
+    arVideoLumaFinal(&vli);
     auto result = emscripten::val::global("Uint8Array").new_(width*height*1);
     result.call<void>("set", view);
     return view;
