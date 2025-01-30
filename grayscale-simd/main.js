@@ -63,11 +63,11 @@ Module.onRuntimeInitialized = async function () {
 
     const width = 1637;
     const height = 2048;
-    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true);
+    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, false, 2);
     
     const canvas = document.createElement('canvas');
-    canvas.width = 1637;
-    canvas.height = 2048;
+    canvas.width = width;
+    canvas.height = height;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
     const imageData = ctx.createImageData(1637, 2048);

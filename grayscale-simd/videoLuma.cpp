@@ -24,18 +24,21 @@ struct ARVideoLumaInfo {
   int buffSize;
   bool fastPath;
   bool simd128;
+  int simdType;
   ARUint8 *__restrict buff;
 };
 
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
                                               uint8_t *__restrict src,
                                               int32_t numPixels);
+static void arVideoLumaRGBAtoL_Intel_simd_asm_w_mm_add_epi32( uint8_t* __restrict dest,
+    uint8_t* __restrict src, int32_t numPixels );
 static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels);
 
 ARVideoLumaInfo *arVideoLumaInit(int xsize, int ysize, bool fastPath,
-                                 bool simd128) {
+                                 bool simd128, int simdType) {
   ARVideoLumaInfo *vli;
 
   vli = (ARVideoLumaInfo *)calloc(1, sizeof(ARVideoLumaInfo));
@@ -48,6 +51,7 @@ ARVideoLumaInfo *arVideoLumaInit(int xsize, int ysize, bool fastPath,
   vli->buffSize = xsize * ysize;
   vli->fastPath = fastPath;
   vli->simd128 = simd128;
+  vli->simdType = simdType;
   vli->buff = (ARUint8 *)valloc(vli->buffSize);
   if (!vli->buff) {
     printf("Out of memory!!\n");
@@ -61,7 +65,6 @@ ARVideoLumaInfo *arVideoLumaInit(int xsize, int ysize, bool fastPath,
 ARUint8 *__restrict arVideoLuma(ARVideoLumaInfo *vli,
                                 const ARUint8 *__restrict dataPtr) {
   unsigned int p, q;
-  printf("vli->fastPath: %d\n", vli->fastPath);
 
   if (vli->fastPath == true) {
     printf("With fastPath!!!\n");
@@ -69,12 +72,18 @@ ARUint8 *__restrict arVideoLuma(ARVideoLumaInfo *vli,
       printf("With simd128!!!\n");
       arVideoLumaRGBAtoL_Emscripten_simd128(
           vli->buff, (unsigned char *__restrict)dataPtr, vli->buffSize);
-
       return (vli->buff);
     } else {
       printf("Without simd128!!!\n");
+       if(vli->simdType == 1)
+        {
       arVideoLumaRGBAtoL_Intel_simd_asm(
           vli->buff, (unsigned char *__restrict)dataPtr, vli->buffSize);
+      }
+      else if(vli->simdType == 2) {
+        arVideoLumaRGBAtoL_Intel_simd_asm_w_mm_add_epi32(
+            vli->buff, (unsigned char *__restrict)dataPtr, vli->buffSize);
+        }
       return (vli->buff);
     }
   } else {
@@ -121,12 +130,15 @@ v128_t unpackhi_epi8(v128_t a, v128_t b) {
 static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
+  //v128_t *pin = (v128_t*)src;
+  //uint32_t *pout = (uint32_t *)dest;
   v128_t RGBScale = wasm_i16x8_make(
       0, B8_CCIR601, G8_CCIR601, R8_CCIR601, 0, B8_CCIR601, G8_CCIR601,
       R8_CCIR601); // RGBScale = [0, B8_CCIR601, G8_CCIR601, R8_CCIR601]
   int numPixelsDiv8 = numPixels >> 3;
 
   for (int i = 0; i < numPixelsDiv8; i++) {
+    //do {
     v128_t pixels0_3 = wasm_v128_load(src); // Load 16 bytes (4 pixels) from src
     v128_t pixels4_7 =
         wasm_v128_load(src + 16); // Load next 16 bytes (4 pixels) from src
@@ -171,10 +183,14 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     // Store the result back to dest
     wasm_v128_store(dest, y0_3);
     wasm_v128_store(dest + 16, y4_7);
+    //wasm_v128_store(dest++, y0_3);
+    //wasm_v128_store(dest++, y4_7);
 
-    src += 32;
-    dest += 32;
+    src += 16;
+    dest += 16;
   }
+  //  numPixelsDiv8--;
+  //} while (numPixelsDiv8);
 }
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
                                               uint8_t *__restrict src,
@@ -231,4 +247,55 @@ static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
 
     numPixelsDiv8--;
   } while (numPixelsDiv8);
+}
+
+static void arVideoLumaRGBAtoL_Intel_simd_asm_w_mm_add_epi32( uint8_t* __restrict dest,
+    uint8_t* __restrict src, int32_t numPixels )
+{
+    __m128i* pin = ( __m128i* )src;
+    int64_t* pout = (int64_t*)dest;
+    int numPixelsDiv8 = numPixels / 8;
+
+    __m128i maskRedBlue = _mm_set1_epi32( 0x00FF00FF );
+    __m128i scaleRedBlue = _mm_set1_epi32( (uint32_t)B8_CCIR601 << 16 | R8_CCIR601 );
+    __m128i scaleGreen = _mm_set1_epi32( G8_CCIR601 );
+
+    do
+    {
+        __m128i pixels1 = _mm_load_si128( pin );
+        __m128i pixels2 = _mm_load_si128( pin + 1 );
+        pin += 2;
+
+        // Shifting uint16 lanes by 8 bits leaves 0 in the higher bytes, no need to mask
+        __m128i g1 = _mm_srli_epi16( pixels1, 8 );
+        __m128i g2 = _mm_srli_epi16( pixels2, 8 );
+
+        // For red and blue channels, bitwise AND with the mask of 0x00FF00FF to isolate
+        __m128i rb1 = _mm_and_si128( pixels1, maskRedBlue );
+        __m128i rb2 = _mm_and_si128( pixels2, maskRedBlue );
+
+        // Scale the numbers, and add pairwise
+        g1 = _mm_madd_epi16( g1, scaleGreen );
+        g2 = _mm_madd_epi16( g2, scaleGreen );
+        rb1 = _mm_madd_epi16( rb1, scaleRedBlue );
+        rb2 = _mm_madd_epi16( rb2, scaleRedBlue );
+
+        // We now have them in int32 lanes in the correct order, add vertically
+        __m128i y1 = _mm_add_epi32( g1, rb1 );
+        __m128i y2 = _mm_add_epi32( g2, rb2 );
+
+        // Divide by 256
+        y1 = _mm_srli_epi32( y1, 8 );
+        y2 = _mm_srli_epi32( y2, 8 );
+
+        // Pack 32-bit lanes into unsigned bytes, with saturation
+        __m128i y = _mm_packs_epi32( y1, y2 );
+        y = _mm_packus_epi16( y, y );
+
+        // Store 8 bytes with 1 instruction
+        *pout = _mm_cvtsi128_si64( y );
+        pout++;
+        numPixelsDiv8--;
+    }
+    while( numPixelsDiv8 );
 }
