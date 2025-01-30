@@ -114,6 +114,10 @@ v128_t unpacklo_epi8(v128_t a, v128_t b) {
   return wasm_i8x16_shuffle(a, b, 0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23);
 }
 
+v128_t unpackhi_epi8(v128_t a, v128_t b) {
+  return wasm_i8x16_shuffle(a, b, 8, 24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31);
+}
+
 static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
@@ -138,10 +142,9 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
         wasm_i16x8_shuffle(pixels4_7, pixels4_7, 1, 3, 5, 7, 9, 11, 13, 15);
     */
     v128_t pixels0_3_l = unpacklo_epi8(pixels0_3, wasm_i64x2_const(0,0));
-    v128_t pixels0_3_h = unpacklo_epi8(pixels0_3, wasm_i64x2_const(0,0));
+    v128_t pixels0_3_h = unpackhi_epi8(pixels0_3, wasm_i64x2_const(0,0));
     v128_t pixels4_7_l = unpacklo_epi8(pixels4_7, wasm_i64x2_const(0,0));
-    v128_t pixels4_7_h = unpacklo_epi8(pixels4_7, wasm_i64x2_const(0,0));
-
+    v128_t pixels4_7_h = unpackhi_epi8(pixels4_7, wasm_i64x2_const(0,0));
 
     // Multiply and add the RGB components
     v128_t y0_3_l = wasm_i32x4_dot_i16x8(pixels0_3_l, RGBScale);
@@ -170,7 +173,7 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     wasm_v128_store(dest + 16, y4_7);
 
     src += 32;
-    dest += 8;
+    dest += 32;
   }
 }
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
