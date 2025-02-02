@@ -67,7 +67,7 @@ Module.onRuntimeInitialized = async function () {
         slow: 1,
         fast: 2
     }
-    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true, simdType.fast);
+    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true, simdType.slow);
     
     const canvas = document.createElement('canvas');
     canvas.width = width;
