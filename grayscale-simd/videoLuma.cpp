@@ -135,19 +135,19 @@ v128_t unpackhi_epi8(v128_t a, v128_t b) {
 static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
-  //v128_t *pin = (v128_t*)src;
-  //uint32_t *pout = (uint32_t *)dest;
+  printf("using arVideoLumaRGBAtoL_Emscripten_simd128 !!!\n");
+  v128_t *pin = (v128_t*)src;
+  uint32_t *pout = (uint32_t *)dest;
   v128_t RGBScale = wasm_i16x8_make(
       0, B8_CCIR601, G8_CCIR601, R8_CCIR601, 0, B8_CCIR601, G8_CCIR601,
       R8_CCIR601); // RGBScale = [0, B8_CCIR601, G8_CCIR601, R8_CCIR601]
   int numPixelsDiv8 = numPixels >> 3;
 
-  for (int i = 0; i < numPixelsDiv8; i++) {
-    //do {
-    v128_t pixels0_3 = wasm_v128_load(src); // Load 16 bytes (4 pixels) from src
+  //for (int i = 0; i < numPixelsDiv8; i++) {
+    do {
+    v128_t pixels0_3 = wasm_v128_load(pin++); // Load 16 bytes (4 pixels) from src
     v128_t pixels4_7 =
-        wasm_v128_load(src + 16); // Load next 16 bytes (4 pixels) from src
-
+        wasm_v128_load(pin++); // Load next 16 bytes (4 pixels) from src
     // Unpack and interleave the low and high bytes of each 16-byte lane
     /*v128_t pixels0_3_l =
         wasm_i16x8_shuffle(pixels0_3, pixels0_3, 0, 2, 4, 6, 8, 10, 12, 14);
@@ -158,50 +158,85 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     v128_t pixels4_7_h =
         wasm_i16x8_shuffle(pixels4_7, pixels4_7, 1, 3, 5, 7, 9, 11, 13, 15);
     */
+    /*__m128i pixels0_3_l = _mm_unpacklo_epi8(
+        pixels0_3,
+        _mm_setzero_si128()); // pixels0_3_l =
+                              // 00[A1]00[B1]00[G1]00[R1]00[A0]00[B0]00[G0]00[R0].
+    __m128i pixels0_3_h = _mm_unpackhi_epi8(
+        pixels0_3,
+        _mm_setzero_si128()); // pixels0_3_h =
+                              // 00[A3]00[B3]00[G3]00[R3]00[A2]00[B2]00[G2]00[R2].
+    __m128i pixels4_7_l = _mm_unpacklo_epi8(
+        pixels4_7,
+        _mm_setzero_si128()); // pixels4_7_l =
+                              // 00[A5]00[B5]00[G5]00[R5]00[A4]00[B4]00[G4]00[R4].
+    __m128i pixels4_7_h = _mm_unpackhi_epi8(
+        pixels4_7,
+        _mm_setzero_si128()); // pixels4_7_h =
+                              // 00[A7]00[B7]00[G7]00[R7]00[A6]00[B6]00[G6]00[R6].*/
     v128_t pixels0_3_l = unpacklo_epi8(pixels0_3, wasm_i64x2_const(0,0));
     v128_t pixels0_3_h = unpackhi_epi8(pixels0_3, wasm_i64x2_const(0,0));
     v128_t pixels4_7_l = unpacklo_epi8(pixels4_7, wasm_i64x2_const(0,0));
     v128_t pixels4_7_h = unpackhi_epi8(pixels4_7, wasm_i64x2_const(0,0));
 
     // Multiply and add the RGB components
+    /*__m128i y0_3_l = _mm_madd_epi16(pixels0_3_l, RGBScale);
+    __m128i y0_3_h = _mm_madd_epi16(pixels0_3_h, RGBScale);
+    __m128i y4_7_l = _mm_madd_epi16(pixels4_7_l, RGBScale);
+    __m128i y4_7_h = _mm_madd_epi16(pixels4_7_h, RGBScale);*/
     v128_t y0_3_l = wasm_i32x4_dot_i16x8(pixels0_3_l, RGBScale);
     v128_t y0_3_h = wasm_i32x4_dot_i16x8(pixels0_3_h, RGBScale);
     v128_t y4_7_l = wasm_i32x4_dot_i16x8(pixels4_7_l, RGBScale);
     v128_t y4_7_h = wasm_i32x4_dot_i16x8(pixels4_7_h, RGBScale);
 
     // Horizontal add the result
+    /*__m128i y0_3 = _mm_hadd_epi32(y0_3_l, y0_3_h);
+    __m128i y4_7 = _mm_hadd_epi32(y4_7_l, y4_7_h);*/
     v128_t y0_3 = hadd_epi32(y0_3_l, y0_3_h);
     v128_t y4_7 = hadd_epi32(y4_7_l, y4_7_h);
     //v128_t y0_3 = wasm_i32x4_add(y0_3_l, y0_3_h);
     //v128_t y4_7 = wasm_i32x4_add(y4_7_l, y4_7_h);
 
     // Shift right by 8 bits to divide by 256
+    /*y0_3 = _mm_srli_epi32(y0_3, 8);
+    y4_7 = _mm_srli_epi32(y4_7, 8);*/
     y0_3 = wasm_u32x4_shr(y0_3, 8);
     y4_7 = wasm_u32x4_shr(y4_7, 8);
 
     // Pack the 32-bit results into 16-bit and then into 8-bit values
+    /*y0_3 = _mm_packs_epi32(y0_3, y0_3);
+    y4_7 = _mm_packs_epi32(y4_7, y4_7);
+    y0_3 = _mm_packus_epi16(y0_3, y0_3);
+    y4_7 = _mm_packus_epi16(y4_7, y4_7);*/
     y0_3 = wasm_i16x8_narrow_i32x4(y0_3, y0_3);
     y4_7 = wasm_i16x8_narrow_i32x4(y4_7, y4_7);
     y0_3 = wasm_u8x16_narrow_i16x8(y0_3, y0_3);
     y4_7 = wasm_u8x16_narrow_i16x8(y4_7, y4_7);
 
+
+
     // Store the result back to dest
-    wasm_v128_store(dest, y0_3);
-    wasm_v128_store(dest + 16, y4_7);
+   //wasm_v128_store(dest, y0_3);
+   //wasm_v128_store(dest + 16, y4_7);
     //wasm_v128_store(dest++, y0_3);
     //wasm_v128_store(dest++, y4_7);
-
-    src += 16;
-    dest += 16;
-  }
-  //  numPixelsDiv8--;
-  //} while (numPixelsDiv8);
+    //*pout++ = _mm_cvtsi128_si32(y0_3);
+    //*pout++ = _mm_cvtsi128_si32(y4_7);
+    *pout++ = wasm_i32x4_extract_lane(y0_3, 0);
+    *pout++ = wasm_i32x4_extract_lane(y4_7, 1);
+    //src += 16;
+    //dest += 16;
+  //}
+    numPixelsDiv8--;
+  } while (numPixelsDiv8);
 }
 static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
+  printf("using arVideoLumaRGBAtoL_Emscripten_simd128_fast !!!\n");
   v128_t *pin = (v128_t*)src;
-  v128_t *pout = (v128_t *)dest;
+  //v128_t *pout = (v128_t *)dest;
+  int64_t* pout = (int64_t*)dest;
   int numPixelsDiv8 = numPixels / 8;
 
     v128_t maskRedBlue = wasm_i32x4_splat( 0x00FF00FF );
@@ -216,8 +251,10 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
         // Shifting uint16 lanes by 8 bits leaves 0 in the higher bytes, no need to mask
         //__m128i g1 = _mm_srli_epi16( pixels1, 8 );
         //__m128i g2 = _mm_srli_epi16( pixels2, 8 );
-        v128_t g1 = wasm_u32x4_shr(pixels1, 8);
-        v128_t g2 = wasm_u32x4_shr(pixels2, 8);
+        //v128_t g1 = wasm_u32x4_shr(pixels1, 8);
+        //v128_t g2 = wasm_u32x4_shr(pixels2, 8);
+        v128_t g1 = wasm_u16x8_shr(pixels1, 8);
+        v128_t g2 = wasm_u16x8_shr(pixels2, 8);
 
         // For red and blue channels, bitwise AND with the mask of 0x00FF00FF to isolate
         //__m128i rb1 = _mm_and_si128( pixels1, maskRedBlue );
@@ -256,13 +293,14 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
 
         // Store 8 bytes with 1 instruction
         //*pout = _mm_cvtsi128_si64( y );
-        wasm_v128_store(pout,  wasm_i64x2_make(wasm_i64x2_extract_lane(y, 0),  wasm_i64x2_extract_lane(y, 1)));
+        *pout = wasm_i64x2_extract_lane(y, 0);
+        //wasm_v128_store(pout,  wasm_i64x2_make(wasm_i64x2_extract_lane(y, 0),  wasm_i64x2_extract_lane(y, 1)));
 
         pout++;
         numPixelsDiv8--;
     }
     while( numPixelsDiv8 );
-                                                  }
+}
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
                                               uint8_t *__restrict src,
                                               int32_t numPixels) {
