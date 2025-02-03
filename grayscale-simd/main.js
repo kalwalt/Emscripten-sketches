@@ -36,27 +36,12 @@ Module.onRuntimeInitialized = async function () {
             // Clean up
             URL.revokeObjectURL(objectURL);
 
-            return { pixelData, width: img.width, height: img.height };
+            return {pixelData, width: img.width, height: img.height};
 
         } catch (error) {
             console.error('Error reading image data:', error);
             return null;
         }
-    }
-
-    function rgbaToRgb(rgbaData) {
-        // We assume that RGBA data is a Uint8Array with structure [R, G, B, A, R, G, B, A, ...]
-
-        const rgbData = new Uint8Array(rgbaData.length / 4 * 3); // New Uint8Array for RGBA data
-        let rgbIndex = 0;
-
-        for (let i = 0; i < rgbaData.length; i += 4) {
-            rgbData[rgbIndex++] = rgbaData[i];   // Copy R
-            rgbData[rgbIndex++] = rgbaData[i + 1]; // Copy G
-            rgbData[rgbIndex++] = rgbaData[i + 2]; // Copy B
-        }
-
-        return rgbData;
     }
 
     const data = await readImageData('pinball.jpg')
@@ -67,18 +52,18 @@ Module.onRuntimeInitialized = async function () {
         slow: 1,
         fast: 2
     }
-    const res = Module.convert_to_luma(data.pixelData, 1637, 2048, true, true, simdType.slow);
-    
+    const res = Module.convert_to_luma(data.pixelData, width, height, true, true, simdType.fast);
+
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
-    const imageData = ctx.createImageData(1637, 2048);
+    const imageData = ctx.createImageData(width, height);
 
     const alpha = 255;
 
-    const rgbaArray = new Uint8Array(width*height*4)
+    const rgbaArray = new Uint8Array(width * height * 4)
     const len = res.length;
 
     for (let i = 0, j = 0; i < len; i++, j += 4) {
