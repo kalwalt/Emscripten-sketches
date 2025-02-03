@@ -119,8 +119,8 @@ int arVideoLumaFinal(ARVideoLumaInfo **vli_p) {
 }
 
 v128_t hadd_epi32(v128_t a, v128_t b) {
-  v128_t shuffled_a = wasm_i32x4_shuffle(a, b, 2, 0, 2, 0);
-  v128_t shuffled_b = wasm_i32x4_shuffle(a, b, 3, 1, 3, 1);
+  v128_t shuffled_a = wasm_i32x4_shuffle(a, b, 0, 2, 4, 6);
+  v128_t shuffled_b = wasm_i32x4_shuffle(a, b, 1, 3, 5, 7);
   return wasm_i32x4_add(shuffled_a, shuffled_b);
 }
 
@@ -223,7 +223,7 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     //*pout++ = _mm_cvtsi128_si32(y0_3);
     //*pout++ = _mm_cvtsi128_si32(y4_7);
     *pout++ = wasm_i32x4_extract_lane(y0_3, 0);
-    *pout++ = wasm_i32x4_extract_lane(y4_7, 1);
+    *pout++ = wasm_i32x4_extract_lane(y4_7, 0);
     //src += 16;
     //dest += 16;
   //}
@@ -304,6 +304,7 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
 static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
                                               uint8_t *__restrict src,
                                               int32_t numPixels) {
+    printf("using arVideoLumaRGBAtoL_Intel_simd_asm !!!\n");
   __m128i *pin = (__m128i *)src;
   uint32_t *pout = (uint32_t *)dest;
   int numPixelsDiv8 = numPixels >> 3;
@@ -361,6 +362,7 @@ static void arVideoLumaRGBAtoL_Intel_simd_asm(uint8_t *__restrict dest,
 static void arVideoLumaRGBAtoL_Intel_simd_asm_w_mm_add_epi32( uint8_t* __restrict dest,
     uint8_t* __restrict src, int32_t numPixels )
 {
+    printf("using arVideoLumaRGBAtoL_Intel_simd_asm_w_mm_add_epi32 !!!\n");
     __m128i* pin = ( __m128i* )src;
     int64_t* pout = (int64_t*)dest;
     int numPixelsDiv8 = numPixels / 8;
