@@ -1,0 +1,1 @@
+emcc simple_stb_example.cpp -I./stb_image -sWASM=1 -std=c++17 --embed-file chalk.jpg --bind -o stb_example.js

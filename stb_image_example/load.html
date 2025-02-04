@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A simple example loading an image with stb_image</title>
+</head>
+
+<body>
+    <script src="stb_example.js"></script>
+    <script>
+        console.log(Module);
+
+        function rgbToRgba(rgbData) {
+            // Assume rgbData is a Uint8Array with structure [R, G, B, R, G, B, ...]
+
+            const rgbaData = new Uint8Array(rgbData.length / 3 * 4); // New array for RGBA data
+            let rgbIndex = 0;
+
+            for (let i = 0; i < rgbData.length; i += 3) {
+                rgbaData[rgbIndex++] = rgbData[i];   // Copy R
+                rgbaData[rgbIndex++] = rgbData[i + 1]; // Copy G
+                rgbaData[rgbIndex++] = rgbData[i + 2]; // Copy B
+                rgbaData[rgbIndex++] = 255; // Create alpha channel]
+            }
+
+            return rgbaData;
+        }
+
+        Module.onRuntimeInitialized = () => {
+            var image = Module.loadImage('./chalk.jpg');
+            console.log("image data from loadImage function", image);
+            const width = image.width;
+            const height = image.height;
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            document.body.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(width, height);
+            // Convert RGB data to RGBA data and put it into imageData.data array
+            imageData.data.set(rgbToRgba(image.data));
+            ctx.putImageData(imageData, 0, 0);
+
+        }
+    </script>
+
+</body>
+
+</html>
