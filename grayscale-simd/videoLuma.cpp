@@ -1,6 +1,30 @@
-//
-// Created by @kalwalt on 28/01/2025.
-//
+/**
+ * @file videoLuma.cpp
+ * @brief RGBA to Luma conversion using SIMD instructions
+ * @author @kalwalt
+ * @date 28/01/2025
+ * 
+ * This code provides efficient RGBA to Luma color space conversion using SIMD instructions.
+ * It supports both Intel SIMD (SSE) and WebAssembly SIMD128 implementations.
+ * 
+ * The conversion uses CCIR 601 recommended coefficients for RGB to Luma conversion:
+ * L = 0.299R + 0.587G + 0.114B
+ * (represented as fixed-point integers: 77R + 150G + 29B)
+ * 
+ * The code is partially derived from ARToolKit5's videoLuma.c:
+ * @see https://github.com/artoolkit/ARToolKit5/blob/master/lib/SRC/Video/videoLuma.c
+ * Modified to focus solely on RGBA to Luma conversion with SIMD optimization
+ * (NEON code removed).
+ * 
+ * Several optimization paths are available:
+ * - Standard non-SIMD conversion
+ * - Intel SIMD (SSE) implementation
+ * - WebAssembly SIMD128 implementation
+ * - Fast path variants for both SIMD implementations
+ * 
+ * @note Requires SSE2, SSE3, SSSE3, SSE4.1, SSE4.2 support for Intel SIMD
+ * @note Requires SIMD128 support for WebAssembly implementation
+ */
 
 #include <emmintrin.h> // SSE2.
 #include <nmmintrin.h> // SSE4.2.
@@ -143,21 +167,11 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
       R8_CCIR601); // RGBScale = [0, B8_CCIR601, G8_CCIR601, R8_CCIR601]
   int numPixelsDiv8 = numPixels >> 3;
 
-  //for (int i = 0; i < numPixelsDiv8; i++) {
+
     do {
     v128_t pixels0_3 = wasm_v128_load(pin++); // Load 16 bytes (4 pixels) from src
-    v128_t pixels4_7 =
-        wasm_v128_load(pin++); // Load next 16 bytes (4 pixels) from src
+    v128_t pixels4_7 = wasm_v128_load(pin++); // Load next 16 bytes (4 pixels) from src
     // Unpack and interleave the low and high bytes of each 16-byte lane
-    /*v128_t pixels0_3_l =
-        wasm_i16x8_shuffle(pixels0_3, pixels0_3, 0, 2, 4, 6, 8, 10, 12, 14);
-    v128_t pixels0_3_h =
-        wasm_i16x8_shuffle(pixels0_3, pixels0_3, 1, 3, 5, 7, 9, 11, 13, 15);
-    v128_t pixels4_7_l =
-        wasm_i16x8_shuffle(pixels4_7, pixels4_7, 0, 2, 4, 6, 8, 10, 12, 14);
-    v128_t pixels4_7_h =
-        wasm_i16x8_shuffle(pixels4_7, pixels4_7, 1, 3, 5, 7, 9, 11, 13, 15);
-    */
     /*__m128i pixels0_3_l = _mm_unpacklo_epi8(
         pixels0_3,
         _mm_setzero_si128()); // pixels0_3_l =
@@ -194,8 +208,6 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
     __m128i y4_7 = _mm_hadd_epi32(y4_7_l, y4_7_h);*/
     v128_t y0_3 = hadd_epi32(y0_3_l, y0_3_h);
     v128_t y4_7 = hadd_epi32(y4_7_l, y4_7_h);
-    //v128_t y0_3 = wasm_i32x4_add(y0_3_l, y0_3_h);
-    //v128_t y4_7 = wasm_i32x4_add(y4_7_l, y4_7_h);
 
     // Shift right by 8 bits to divide by 256
     /*y0_3 = _mm_srli_epi32(y0_3, 8);
@@ -216,26 +228,21 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128(uint8_t *__restrict dest,
 
 
     // Store the result back to dest
-   //wasm_v128_store(dest, y0_3);
-   //wasm_v128_store(dest + 16, y4_7);
-    //wasm_v128_store(dest++, y0_3);
-    //wasm_v128_store(dest++, y4_7);
     //*pout++ = _mm_cvtsi128_si32(y0_3);
     //*pout++ = _mm_cvtsi128_si32(y4_7);
     *pout++ = wasm_i32x4_extract_lane(y0_3, 0);
     *pout++ = wasm_i32x4_extract_lane(y4_7, 0);
-    //src += 16;
-    //dest += 16;
-  //}
+
     numPixelsDiv8--;
   } while (numPixelsDiv8);
 }
 static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
                                                   uint8_t *__restrict src,
                                                   int32_t numPixels) {
+
   printf("using arVideoLumaRGBAtoL_Emscripten_simd128_fast !!!\n");
+
   v128_t *pin = (v128_t*)src;
-  //v128_t *pout = (v128_t *)dest;
   int64_t* pout = (int64_t*)dest;
   int numPixelsDiv8 = numPixels / 8;
 
@@ -251,8 +258,6 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
         // Shifting uint16 lanes by 8 bits leaves 0 in the higher bytes, no need to mask
         //__m128i g1 = _mm_srli_epi16( pixels1, 8 );
         //__m128i g2 = _mm_srli_epi16( pixels2, 8 );
-        //v128_t g1 = wasm_u32x4_shr(pixels1, 8);
-        //v128_t g2 = wasm_u32x4_shr(pixels2, 8);
         v128_t g1 = wasm_u16x8_shr(pixels1, 8);
         v128_t g2 = wasm_u16x8_shr(pixels2, 8);
 
@@ -294,7 +299,6 @@ static void arVideoLumaRGBAtoL_Emscripten_simd128_fast(uint8_t *__restrict dest,
         // Store 8 bytes with 1 instruction
         //*pout = _mm_cvtsi128_si64( y );
         *pout = wasm_i64x2_extract_lane(y, 0);
-        //wasm_v128_store(pout,  wasm_i64x2_make(wasm_i64x2_extract_lane(y, 0),  wasm_i64x2_extract_lane(y, 1)));
 
         pout++;
         numPixelsDiv8--;
