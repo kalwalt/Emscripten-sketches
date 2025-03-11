@@ -5,10 +5,12 @@
 #define FMT_HEADER_ONLY
 
 #include <fmt/color.h>
+#include <fmt/format.h>
 
 int main ()
 {
-    std::string s = "Abc\n";
-    fmt::print(bg(fmt::color::red), s);
+    std::string s = "Abc";
+    fmt::print(fmt::format(fg(fmt::color::white) | bg(fmt::color::red), s));
+    fmt::print("\n"); // Add a newline character
     return 0;
 }
